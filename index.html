@@ -1,0 +1,52 @@
+<html>
+<head>
+  <meta charset='utf-8'>
+  <title>socket.io</title>
+</head>
+<body>
+  <input type='text' id='from_id' style='width:20px;'/><br>
+  <input type='text' id='to_id' style='width:20px;'/>
+  <input type='text' id='msg_id' style='width:200px;'/>
+  <button onclick='publishMessage();'>ツイート</button>
+  <div id='msg'></div>
+  <script src='./socket.io/socket.io.js'></script>
+  <script type='text/javascript'>
+
+    var socketio = io();
+//        var socketio = io.connect('https://xxxxx.azurewebsites.net/');    URL指定はこうする
+    // 接続された
+    socketio.on('connected', function(name) {});
+    // データを受信
+    socketio.on('publish', function(data) {addMessage(data);});
+    // 接続解除された
+    socketio.on('disconnect', function() {});
+
+    function start(){
+      var from = document.getElementById('from_id').value;
+      socketio.emit('connected', from);
+    }
+
+    // ボタンが押された
+    function publishMessage(){
+      var from = document.getElementById('from_id').value;
+      var to = document.getElementById('to_id').value;
+      var msg = document.getElementById('msg_id').value;
+      console.log(from, to, msg);
+      socketio.emit('publish', {from: from, to: to, value: msg});
+      document.getElementById('msg_id').value = '';
+    }
+
+    // データを受信
+    function addMessage(data){
+      var domMeg = document.createElement('div');
+      var from = document.getElementById('from_id').value;
+      var cond = from == data.to ? '○' : '×';
+      domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + cond + ' ' + data.from + ' ' + data.to + ' ' + data.value;
+      msgArea.appendChild(domMeg);
+    }
+
+    var msgArea = document.getElementById('msg');
+    start();
+  </script>
+</body>
+</html>
