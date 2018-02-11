@@ -76,7 +76,7 @@
     if (parseInt(data.value) > 50) {
       document.body.style.backgroundColor = '#FFFFFF'
     } else {
-      navigator.vibrate(3000);
+      window.navigator.vibrate(3000);
       beep();
       document.body.style.backgroundColor = '#ff0000'
     }
