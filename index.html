@@ -26,9 +26,9 @@
   var sended = -1000;
 
   function handleOrientation(event) {
-    var x = event.beta;  // -180 から 180 の範囲で角度を示す
-    var y = event.gamma; // -90 から 90 の範囲で角度を示す
-    var val = parseInt(Math.abs(x + 90));
+    var y = event.accelerationIncludingGravity.y; // -10 から 10 の範囲で角度を示す
+    console.log(y);
+    var val = parseInt(Math.abs((y + 10) * 9));
     if (Math.abs(sended - val) > 2) {
       var from = document.getElementById('from_id').value;
       var to = document.getElementById('to_id').value;
@@ -39,7 +39,8 @@
     }
   }
 
-  window.addEventListener('deviceorientation', handleOrientation);
+  //window.addEventListener('deviceorientation', handleOrientation);
+  window.addEventListener('devicemotion', handleOrientation);
 
   var socketio = io();
 //        var socketio = io.connect('https://xxxxx.azurewebsites.net/');    URL指定はこうする
