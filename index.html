@@ -67,6 +67,11 @@ window.addEventListener('deviceorientation', handleOrientation);
     var cond = from == data.to ? '○' : '×';
     domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + cond + ' ' + data.from + ' ' + data.to + ' ' + data.value;
     msgArea.appendChild(domMeg);
+    if (parseInt(data.value) > 50) {
+      document.body.style.backgroundColor = '#FFFFFF'
+    } else {
+      document.body.style.backgroundColor = '#ff0000'
+    }
   }
 
   var msgArea = document.getElementById('msg');
