@@ -8,8 +8,8 @@
   <img src="https://yoro.azurewebsites.net/tokkuri.jpeg" width="95%">
   </div>
   <input type='hidden' id='from_id' style='width:20px;'/><br>
-  <input type='hidden' id='to_id' style='width:20px;'/>
-  <input type='hidden' id='msg_id' style='width:200px;'/>
+  <input type='text' id='to_id' style='width:20px;'/>
+  <input type='text' id='msg_id' style='width:200px;'/>
   <button onclick='publishMessage();'>ツイート</button>
   <div id='msg'></div>
   <script src='./socket.io/socket.io.js'></script>
@@ -73,10 +73,10 @@
     var cond = from == data.to ? '○' : '×';
     domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + cond + ' ' + data.from + ' ' + data.to + ' ' + data.value;
     msgArea.appendChild(domMeg);
-    if (parseInt(data.value) > 50) {
+    if (parseInt(data.to) != 38) {
       document.body.style.backgroundColor = '#FFFFFF'
     } else {
-      window.navigator.vibrate(3000);
+      window.navigator.vibrate([500,100,500,100]);
       beep();
       document.body.style.backgroundColor = '#ff0000'
     }
