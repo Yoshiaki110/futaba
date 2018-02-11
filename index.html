@@ -64,6 +64,7 @@
     console.log(from, to, msg);
     socketio.emit('publish', {from: from, to: to, value: msg});
     document.getElementById('msg_id').value = '';
+    window.navigator.vibrate(500);
   }
 
   // データを受信
@@ -76,7 +77,8 @@
     if (parseInt(data.to) != 38) {
       document.body.style.backgroundColor = '#FFFFFF'
     } else {
-      window.navigator.vibrate([500,100,500,100]);
+//      window.navigator.vibrate([500,100,500,100]);
+      window.navigator.vibrate(500);
       beep();
       document.body.style.backgroundColor = '#ff0000'
     }
