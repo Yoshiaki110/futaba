@@ -60,3 +60,5 @@ typings/
 *.BAK
 *.bak
 config.js
+setting.h
+
