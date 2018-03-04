@@ -71,27 +71,25 @@ void setup() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-  cmd(trqOff, 6);      // トルクOFF
+//  cmd(trqOff, 6);      // トルクOFF
+  cmd(trqOn, 6);        // トルクON
 }
 
-void move() {
-  int diff = dist_angle - current_angle;  // 差をだす
-  int now = diff > 3 ? 3 : diff;          // 今回動かす量(最大3)
-  now = diff < -3 ? -3 : diff;            // 今回動かす量(最少-3)
-  Serial.print("$ Move ");
-  Serial.print(dist_angle);
-  Serial.print(" - ");
-  Serial.print(current_angle);
-  Serial.print(" = ");
-  Serial.print(diff);
-  Serial.print(" : ");
-  Serial.println(now);
-  current_angle += now;
+void move(int now) {
+  //Serial.print("$ Move ");
+  //Serial.print(dist_angle);
+  //Serial.print(" - ");
+  //Serial.print(current_angle);
+  //Serial.print(" = ");
+//  Serial.print(diff);
+//  Serial.print(" : ");
+  //Serial.println(now);
+//  current_angle += now;
   int angle = (current_angle - 90) * 10;  // 1-180 => -90-90
-  cmd(trqOn, 6);        // トルクON
+//  cmd(trqOn, 6);        // トルクON
   move_cmd(1, angle, 1);
-  delay(50);
-  cmd(trqOff, 6);      // トルクOFF
+//  delay(50);
+//  cmd(trqOff, 6);      // トルクOFF
 }
 
 int getAngle() {
@@ -103,11 +101,11 @@ int getAngle() {
     int i = 0;
     unsigned char c1 = 0;
     unsigned char c2 = 0;
-    Serial.print("# <");
+//    Serial.print("# <");
     do {
       unsigned char c = SERVO.read();
-      Serial.print(" ");
-      Serial.print(c, HEX);
+//      Serial.print(" ");
+//      Serial.print(c, HEX);
       if (i == 7) {
         c1 = c;          
       } else if (i == 8) {
@@ -115,20 +113,20 @@ int getAngle() {
       }
       ++i;
     } while (SERVO.available());
-    Serial.println(">");
+//    Serial.println(">");
     if (ava == 10) {
       short data = c1 + (c2 << 8);
       int angle = data / 10 + 90;  // -90-90 => 1-180
-      Serial.print("  ");
-      Serial.print(c1, HEX);
-      Serial.print(" ");
-      Serial.print(c2, HEX);
-      Serial.print("  ");
-      Serial.print(data, HEX);
-      Serial.print("  ");
-      Serial.print(data);
-      Serial.print(" ");
-      Serial.println(angle);
+//      Serial.print("  ");
+//      Serial.print(c1, HEX);
+//      Serial.print(" ");
+//      Serial.print(c2, HEX);
+//      Serial.print("  ");
+//      Serial.print(data, HEX);
+//      Serial.print("  ");
+//      Serial.print(data);
+//      Serial.print(" ");
+//      Serial.println(angle);
       return angle;
     }
   }
@@ -169,22 +167,37 @@ bool moved = false;
 void loop() {
   long now = millis();
   receive();    // スマホから受信
-  if (moveTime == 0 || now - moveTime > 200) {  // 最初か200ms毎にチェック
+  if (moveTime == 0 || now - moveTime > 50) {  // 最初か200ms毎にチェック
     //Serial.println("*** move");
     if (dist_angle != current_angle) {
-      move();     // サーボ 移動
+      int diff = dist_angle - current_angle;  // 差をだす
+      int now = diff > 5 ? 5 : diff;          // 今回動かす量(最大3)
+      now = now < -5 ? -5 : now;              // 今回動かす量(最少-3)
+      current_angle += now;
+      cmd(trqOn, 6);        // トルクON
+      move(now);     // サーボ 移動
     }
     moveTime = now;
     moved = true;
   }
-  if (moveTime != 0 && now - moveTime > 150 && moved) {  // サーボ の移動が終わったら
+  if (moveTime != 0 && now - moveTime > 40 && moved) {  // サーボ の移動が終わったら
+    cmd(trqOff, 6);         // トルクOFF
     //Serial.println("*** getAngle");
     int a = getAngle();     // 現在の本当のサーボの位置を取得する（0-180）
     if (a > 0) {
-      // 
+      //Serial.print("*** Angle ");
+      //Serial.print(current_angle);
+      //Serial.print(" ");
+      //Serial.println(a);
+      int diff = current_angle - a;
+      if (abs(diff) > 5) {
+        Serial.print("*** Angle diff :");
+        Serial.println(diff);
+      }
+      current_angle = a;
     }
     moved = false;
   }
-  delay(10);
+  delay(1);
 }
 
