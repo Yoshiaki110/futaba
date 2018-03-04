@@ -71,8 +71,8 @@ void setup() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-//  cmd(trqOff, 6);      // トルクOFF
-  cmd(trqOn, 6);        // トルクON
+  cmd(trqOff, 6);      // トルクOFF
+//  cmd(trqOn, 6);        // トルクON
 }
 
 void move(int now) {
@@ -160,6 +160,12 @@ void receive() {
     }
   }
 }
+// スマホから受信
+void send() {
+  unsigned char msg[] = {255, RID, 220};
+  client.write(msg, 3);
+  client.flush();
+}
 
 long moveTime = 0;
 bool moved = false;
@@ -193,6 +199,7 @@ void loop() {
       if (abs(diff) > 5) {
         Serial.print("*** Angle diff :");
         Serial.println(diff);
+        send();
       }
       current_angle = a;
     }
