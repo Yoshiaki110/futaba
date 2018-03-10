@@ -33,10 +33,11 @@ function connect() {
             }
             if (p >= 0) {                      // 正しいデータあり
                console.log('  receive id:' + data[p+1] + ' val:' + data[p+2] + ' len:' + data.length);
-               if (data[p+1] == CallBackID) {
+               //if (data[p+1] == CallBackID) {
                  var val = '' + CallBackID;
-                 io.sockets.emit('publish', {from: val, to: val, value: val});    // 送信
-               }
+                 io.sockets.emit('publish', {from: data[p], to: data[p+1], value: data[p+2]});    // 送信
+                 //io.sockets.emit('publish', {from: val, to: val, value: val});    // 送信
+               //}
             } else {
                 console.log('receive not found separater. data len:' + data.length);
             }

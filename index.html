@@ -7,6 +7,7 @@
   <div align="center">
   <img src="https://yoro.azurewebsites.net/tokkuri.jpeg" width="95%">
   </div>
+  <br>bhr><br><br><br><br><br><br>bhr><br><br><br><br><br>
   <input type='hidden' id='from_id' style='width:20px;'/><br>
   <input type='text' id='to_id' style='width:20px;'/>
   <input type='text' id='msg_id' style='width:200px;'/>
@@ -74,13 +75,13 @@
     var cond = from == data.to ? '○' : '×';
     domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + cond + ' ' + data.from + ' ' + data.to + ' ' + data.value;
     msgArea.appendChild(domMeg);
-    if (parseInt(data.to) != 38) {
+    if (parseInt(data.to) != 29) {
       document.body.style.backgroundColor = '#FFFFFF'
     } else {
 //      window.navigator.vibrate([500,100,500,100]);
       window.navigator.vibrate(500);
-      beep();
-      document.body.style.backgroundColor = '#ff0000'
+//      beep();
+      document.body.style.backgroundColor = '#ffff00'
     }
   }
 

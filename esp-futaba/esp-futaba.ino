@@ -5,6 +5,9 @@
 #include <SoftwareSerial.h>
 #include "setting.h"
 
+const int led = 14;       // ONBOARD 14
+const int buttonPin = 0;  // 
+
 String host = HOST;
 int port = PORT;
 int id = ID;
@@ -54,6 +57,9 @@ void move_cmd(unsigned char id, int angle, int time) {
 }
 
 void setup() {
+  pinMode(led, OUTPUT);
+  pinMode(buttonPin, INPUT);
+
   Serial.begin(115200);
   SERVO.begin(115200);
 
@@ -135,6 +141,13 @@ int getAngle() {
 
 // スマホから受信
 void receive() {
+  int buttonState = digitalRead(buttonPin);
+  if (buttonState == LOW) {
+    client.stop();
+    delay(100);
+  }
+
+  
   if (!client.connected()) {
     Serial.println("> not connected");
     if (!client.connect(host, port)) {
