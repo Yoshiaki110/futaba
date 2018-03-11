@@ -3,6 +3,7 @@
 #include <ESP8266WebServer.h>
 #include <FS.h>
 #include <SoftwareSerial.h>
+//#include <Ticker.h>
 #include "setting.h"
 
 const int led = 14;       // ONBOARD 14
@@ -20,6 +21,30 @@ SoftwareSerial SERVO(5, 4, false, 256);
 int current_angle = 180;  // 現在の位置(0-180)
 int dist_angle = 180;     // 最終目的確度(0-180)
 WiFiClient client;
+long moveTime = 0;
+bool moved = false;
+long ledTime = 0;
+long keepAliveTime = 0;
+
+void ledOff(long now) {
+  digitalWrite(led, 0);;
+  ledTime = now;
+}
+
+void ledOn(long now) {
+  if (ledTime != 0 && now - ledTime > 50) {
+    digitalWrite(led, 1);
+    ledTime = 0;
+  }
+}
+
+void keepAlive(long now) {
+  if (keepAliveTime == 0 || now - keepAliveTime > 3000) {
+    send(ID, 200);
+    keepAliveTime = now;
+  }
+}
+
 
 void cmd(unsigned char *cmd, int cnt) {
   unsigned char CheckSum = 0; // チェックサム計算用変数
@@ -69,7 +94,10 @@ void setup() {
   Serial.println("PASS: " + pass);
   WiFi.begin(ssid.c_str(), pass.c_str());
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    delay(200);
+    digitalWrite(led, 0);
+    delay(200);  
+    digitalWrite(led, 1);
     Serial.print(".");
   }
   Serial.println("");
@@ -140,10 +168,11 @@ int getAngle() {
 }
 
 // スマホから受信
-void receive() {
+void receive(long now) {
   int buttonState = digitalRead(buttonPin);
-  if (buttonState == LOW) {
+  if (buttonState == LOW || now - keepAliveTime > 6000) {
     client.stop();
+    Serial.println("not comming keepAlive!");
     delay(100);
   }
 
@@ -159,6 +188,7 @@ void receive() {
 //  Serial.print("> sock available:");
 //  Serial.println(client.available());
   if (client.available() >= 3) {
+    ledOff(now);
     int c1 = client.read();
     int c2 = client.read();
     int c3 = client.read();
@@ -168,24 +198,22 @@ void receive() {
     Serial.print(c2);
     Serial.print(" ");
     Serial.println(c3);
-    if (c1 == 0xff && c2 == id) {
+    if (c1 == 0xff && c2 == id && c3 <= 180) {
       dist_angle = c3;
     }
   }
 }
 // スマホから受信
-void send() {
-  unsigned char msg[] = {255, RID, 220};
+void send(unsigned char rid, unsigned char val) {
+  unsigned char msg[] = {255, rid, val};
   client.write(msg, 3);
   client.flush();
 }
 
-long moveTime = 0;
-bool moved = false;
-
 void loop() {
   long now = millis();
-  receive();    // スマホから受信
+  ledOn(now);
+  receive(now);    // スマホから受信
   if (moveTime == 0 || now - moveTime > 50) {  // 最初か200ms毎にチェック
     //Serial.println("*** move");
     if (dist_angle != current_angle) {
@@ -199,6 +227,7 @@ void loop() {
     moveTime = now;
     moved = true;
   }
+  keepAlive(now);      // KeepALive
   if (moveTime != 0 && now - moveTime > 40 && moved) {  // サーボ の移動が終わったら
     cmd(trqOff, 6);         // トルクOFF
     //Serial.println("*** getAngle");
@@ -211,8 +240,12 @@ void loop() {
       int diff = current_angle - a;
       if (abs(diff) > 5) {
         Serial.print("*** Angle diff :");
+        Serial.print(current_angle);
+        Serial.print(" - ");
+        Serial.print(a);
+        Serial.print(" = ");
         Serial.println(diff);
-        send();
+        send(RID, 220);
       }
       current_angle = a;
     }
