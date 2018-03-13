@@ -21,16 +21,21 @@ SoftwareSerial SERVO(5, 4, false, 256);
 int current_angle = 180;  // 現在の位置(0-180)
 int dist_angle = 180;     // 最終目的確度(0-180)
 WiFiClient client;
-long moveTime = 0;
-bool moved = false;
-long ledTime = 0;
-long keepAliveTime = 0;
+long moveTime = 0;        // サーボを動かそうとした時間(50ms毎)
+bool moved = false;       // サーボを動かそうとしたか
+long ledTime = 0;         // LEDをOFFにした時間、ONにすると0
+long keepAliveTime = 0;   // KeepAliveパケットを投げた時間
+long receiveTime = 0;     // データを受信した時間
+int feedbackCount = 0;    // フィードバックすぐしないで指定回数以上になったら行うため
 
+
+// LEDをOFFにする
 void ledOff(long now) {
   digitalWrite(led, 0);;
   ledTime = now;
 }
 
+// LEDをONにする(ただしOFから50ms以上経過しないとONにならない)
 void ledOn(long now) {
   if (ledTime != 0 && now - ledTime > 50) {
     digitalWrite(led, 1);
@@ -170,7 +175,7 @@ int getAngle() {
 // スマホから受信
 void receive(long now) {
   int buttonState = digitalRead(buttonPin);
-  if (buttonState == LOW || now - keepAliveTime > 6000) {
+  if (buttonState == LOW || (receiveTime != 0 && now - receiveTime > 6000)) {
     client.stop();
     Serial.println("not comming keepAlive!");
     delay(100);
@@ -188,7 +193,8 @@ void receive(long now) {
 //  Serial.print("> sock available:");
 //  Serial.println(client.available());
   if (client.available() >= 3) {
-    ledOff(now);
+    receiveTime = now;
+    ledOff(now);               // LED点滅させる
     int c1 = client.read();
     int c2 = client.read();
     int c3 = client.read();
@@ -212,9 +218,9 @@ void send(unsigned char rid, unsigned char val) {
 
 void loop() {
   long now = millis();
-  ledOn(now);
+  ledOn(now);      // LEDをONにする(ただしOFから50ms以上経過しないとONにならない)
   receive(now);    // スマホから受信
-  if (moveTime == 0 || now - moveTime > 50) {  // 最初か200ms毎にチェック
+  if (moveTime == 0 || now - moveTime > 50) {  // 最初か50ms毎にチェック
     //Serial.println("*** move");
     if (dist_angle != current_angle) {
       int diff = dist_angle - current_angle;  // 差をだす
@@ -222,12 +228,12 @@ void loop() {
       now = now < -5 ? -5 : now;              // 今回動かす量(最少-3)
       current_angle += now;
       cmd(trqOn, 6);        // トルクON
-      move(now);     // サーボ 移動
+      move(now);            // サーボ 移動
     }
     moveTime = now;
     moved = true;
   }
-  keepAlive(now);      // KeepALive
+  keepAlive(now);           // KeepALiveパケット送信
   if (moveTime != 0 && now - moveTime > 40 && moved) {  // サーボ の移動が終わったら
     cmd(trqOff, 6);         // トルクOFF
     //Serial.println("*** getAngle");
@@ -245,7 +251,11 @@ void loop() {
         Serial.print(a);
         Serial.print(" = ");
         Serial.println(diff);
-        send(RID, 220);
+        if (++feedbackCount > 1) {
+          send(RID, 220);   // ２回連続で定位置にない場合フィードバック
+        }
+      } else {
+        feedbackCount = 0;
       }
       current_angle = a;
     }
