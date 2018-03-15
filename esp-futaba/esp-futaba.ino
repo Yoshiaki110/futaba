@@ -14,7 +14,8 @@ int port = PORT;
 int id = ID;
 
 byte trqOn[] = {0x01, 0x00, 0x24, 0x01, 0x01, 0x01};    //トルクON
-byte trqOff[] = {0x01, 0x00, 0x24, 0x01, 0x01, 0x00};   //トルクOFF
+//byte trqOff[] = {0x01, 0x00, 0x24, 0x01, 0x01, 0x00};   //トルクOFF
+byte trqBrk[] = {0x01, 0x00, 0x24, 0x01, 0x01, 0x00};   //トルクブレーキモード
 byte getPos[]={0x01, 0x0F, 0x2A, 0x02, 0x00};
 
 SoftwareSerial SERVO(5, 4, false, 256);
@@ -110,7 +111,7 @@ void setup() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-  cmd(trqOff, 6);      // トルクOFF
+  cmd(trqBrk, 6);      // トルクOFF
 //  cmd(trqOn, 6);        // トルクON
 }
 
@@ -126,7 +127,7 @@ void move(int now) {
 //  current_angle += now;
   int angle = (current_angle - 90) * 10;  // 1-180 => -90-90
 //  cmd(trqOn, 6);        // トルクON
-  move_cmd(1, angle, 1);
+  move_cmd(1, angle, 5);
 //  delay(50);
 //  cmd(trqOff, 6);      // トルクOFF
 }
@@ -216,26 +217,33 @@ void send(unsigned char rid, unsigned char val) {
   client.flush();
 }
 
+#define PITCH 8
 void loop() {
   long now = millis();
   ledOn(now);      // LEDをONにする(ただしOFから50ms以上経過しないとONにならない)
   receive(now);    // スマホから受信
-  if (moveTime == 0 || now - moveTime > 50) {  // 最初か50ms毎にチェック
-    //Serial.println("*** move");
+  if (moveTime == 0 || now - moveTime > 90) {  // 最初か50ms毎にチェック
+    Serial.print("*** move ");
+    Serial.print(dist_angle);
+    Serial.print(" ");
+    Serial.print(current_angle);
     if (dist_angle != current_angle) {
       int diff = dist_angle - current_angle;  // 差をだす
-      int now = diff > 5 ? 5 : diff;          // 今回動かす量(最大3)
-      now = now < -5 ? -5 : now;              // 今回動かす量(最少-3)
+      int now = diff > PITCH ? PITCH : diff;          // 今回動かす量(最大3)
+      now = now < -(PITCH) ? -(PITCH) : now;              // 今回動かす量(最少-3)
       current_angle += now;
       cmd(trqOn, 6);        // トルクON
       move(now);            // サーボ 移動
+      Serial.print(" ");
+      Serial.print(now);
     }
+    Serial.println(" ");
     moveTime = now;
     moved = true;
   }
   keepAlive(now);           // KeepALiveパケット送信
-  if (moveTime != 0 && now - moveTime > 40 && moved) {  // サーボ の移動が終わったら
-    cmd(trqOff, 6);         // トルクOFF
+  if (moveTime != 0 && now - moveTime > 70 && moved) {  // サーボ の移動が終わったら
+    cmd(trqBrk, 6);         // トルクOFF
     //Serial.println("*** getAngle");
     int a = getAngle();     // 現在の本当のサーボの位置を取得する（0-180）
     if (a > 0) {
@@ -244,7 +252,7 @@ void loop() {
       //Serial.print(" ");
       //Serial.println(a);
       int diff = current_angle - a;
-      if (abs(diff) > 5) {
+      if (abs(diff) > PITCH) {
         Serial.print("*** Angle diff :");
         Serial.print(current_angle);
         Serial.print(" - ");
